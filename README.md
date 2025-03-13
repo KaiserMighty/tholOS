@@ -3,13 +3,20 @@ x86 Operating System
 
 ## Prerequisites
 ```
-apt install make
-apt install nasm
-apt install qemu-system-i386
+apt install make nasm qemu-system-i386
+apt install dosfstools mtools
+apt install bochs bochs-sdl bochsbios vgabios
 ```
 
 ## Build
 ```
 make
-qemu-system-i386 -fda build/main_floppy.img
+chmod +x run.sh
+./run.sh
+```
+
+## Debug
+```
+chmod +x debug.sh
+./run.debug
 ```
