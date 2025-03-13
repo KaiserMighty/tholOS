@@ -1,11 +1,17 @@
-org 0x7C00
+org 0x0
 bits 16
 
 %define ENDL 0x0D, 0x0A
 
 
 start:
-    jmp main
+    ; print hello world
+    mov si, msg_hello
+    call puts
+
+.halt:
+    cli
+    hlt
 
 
 ; Print a string.
@@ -15,46 +21,23 @@ puts:
     ; save registers
     push si
     push ax
+    push bx
 
 .loop:
     lodsb                   ; get next char
     or al, al               ; is char null
     jz .done
 
-    mov ah, 0x0e            ; bios interrupt
-    mov bh, 0
+    mov ah, 0x0E            ; bios interrupt
+    mov bh, 0               ; set page number to 0
     int 0x10
 
     jmp .loop
 
 .done:
+    pop bx
     pop ax
     pop si
     ret
 
-main:
-    ; data segments
-    mov ax, 0               ; can't directly write to ds & es
-    mov ds, ax
-    mov es, ax
-
-    ; stack
-    mov ss, ax
-    mov sp, 0x7C00          ; stack grows downward
-
-    ; print hello world
-    mov si, msg_hello
-    call puts
-
-    ; temp
-    hlt
-
-.halt:
-    jmp .halt
-
-
 msg_hello: db 'Hello world!', ENDL, 0
-
-
-times 510-($-$$) db 0
-dw 0AA55h
