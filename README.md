@@ -8,7 +8,7 @@ apt install dosfstools mtools
 apt install bochs bochs-sdl bochsbios vgabios
 ```
 Needs [Open Watcom 2](https://github.com/open-watcom/open-watcom-v2) to compile bootloader in 16-Bit Real Mode.  
-Make sure the "Include 16-bit copmilers" option is selected in the components menu.  
+Make sure the "Include 16-bit compilers" option is selected in the components menu.  
 
 ## Build
 ```
