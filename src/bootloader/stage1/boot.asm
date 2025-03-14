@@ -15,9 +15,9 @@ bdb_reserved_sectors:       dw 1
 bdb_fat_count:              db 2
 bdb_dir_entries_count:      dw 0E0h
 bdb_total_sectors:          dw 2880                 ; 2880 * 512 = 1.44MB
-bdb_media_descriptor_type   db 0F0h                 ; F0 = 3.5" floppy disk
-bdb_sectors_per_fat         dw 9                    ; 9 sectors/fat
-bdb_sectors_per_track       dw 18
+bdb_media_descriptor_type:  db 0F0h                 ; F0 = 3.5" floppy disk
+bdb_sectors_per_fat:        dw 9                    ; 9 sectors/fat
+bdb_sectors_per_track:      dw 18
 bdb_heads:                  dw 2
 bdb_hidden_sectors:         dd 0
 bdb_large_sector_count:     dd 0
@@ -156,11 +156,14 @@ start:
     add si, ax
     mov ax, [ds:si]                     ; read entry from FAT table at index ax
 
-.even:
+    or dx, dx
+    jz .even
+
+.odd:
     shr ax, 4
     jmp .next_cluster_after
 
-.odd:
+.even:
     and ax, 0x0FFF
 
 .next_cluster_after:
@@ -219,8 +222,8 @@ puts:
     or al, al                           ; is char null
     jz .done
 
-    mov ah, 0x0e                        ; bios interrupt
-    mov bh, 0
+    mov ah, 0x0E                        ; bios interrupt
+    mov bh, 0                           ; page number = 0
     int 0x10
 
     jmp .loop
@@ -306,11 +309,11 @@ disk_read:
 
 .done:
     popa
-    pop ax                              ; restore registers
-    pop bx
-    pop cx
-    pop dx
     pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ax                              ; restore registers
     ret
 
 
@@ -329,10 +332,10 @@ disk_reset:
 msg_loading:            db 'Loading...', ENDL, 0
 msg_read_failed:        db 'Disk read failed!', ENDL, 0
 msg_stage2_not_found:   db 'STAGE2.BIN file not found!', ENDL, 0
-file_stage2_bin         db 'STAGE2  BIN'
-stage2_cluster          dw 0
+file_stage2_bin:        db 'STAGE2  BIN'
+stage2_cluster:         dw 0
 
-STAGE2_LOAD_SEGMENT      equ 0x2000
+STAGE2_LOAD_SEGMENT     equ 0x2000
 STAGE2_LOAD_OFFSET      equ 0
 
 times 510-($-$$) db 0
