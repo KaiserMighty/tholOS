@@ -2,11 +2,10 @@
 
 global i686_GDT_Load
 i686_GDT_Load:
-    
     ; make new call frame
     push ebp             ; save old call frame
     mov ebp, esp         ; initialize new call frame
-    
+
     ; load gdt
     mov eax, [ebp + 8]
     lgdt [eax]

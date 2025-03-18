@@ -65,7 +65,8 @@ typedef enum
     GDT_BASE_HIGH(base)                             \
 }
 
-GDTEntry g_GDT[] = {
+GDTEntry g_GDT[] =
+{
     // NULL descriptor
     GDT_ENTRY(0, 0, 0, 0),
 
@@ -80,7 +81,6 @@ GDTEntry g_GDT[] = {
               0xFFFFF,
               GDT_ACCESS_PRESENT | GDT_ACCESS_RING0 | GDT_ACCESS_DATA_SEGMENT | GDT_ACCESS_DATA_WRITEABLE,
               GDT_FLAG_32BIT | GDT_FLAG_GRANULARITY_4K),
-
 };
 
 GDTDescriptor g_GDTDescriptor = { sizeof(g_GDT) - 1, g_GDT};
