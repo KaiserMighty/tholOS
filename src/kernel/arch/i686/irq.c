@@ -1,32 +1,52 @@
 #include "irq.h"
 #include "pic.h"
+#include "i8259.h"
 #include "io.h"
-#include <stdio.h>
 #include <stddef.h>
+#include <util/arrays.h>
+#include "stdio.h"
 
 #define PIC_REMAP_OFFSET 0x20
 
 IRQHandler g_IRQHandlers[16];
+static const PICDriver* g_Driver = NULL;
 
 void i686_IRQ_Handler(Registers* regs)
 {
     int irq = regs->interrupt - PIC_REMAP_OFFSET;
-    uint8_t pic_isr = i686_PIC_ReadInServiceRegister();
-    uint8_t pic_irr = i686_PIC_ReadIrqRequestRegister();
 
     if (g_IRQHandlers[irq] != NULL)
         g_IRQHandlers[irq](regs);
     else
-        printf("Unhandled IRQ %d  ISR=%x  IRR=%x...\n", irq, pic_isr, pic_irr);
-    i686_PIC_SendEndOfInterrupt(irq);
+        printf("Unhandled IRQ %d...\n", irq);
+    g_Driver->SendEndOfInterrupt(irq);
 }
 
 void i686_IRQ_Initialize()
 {
-    i686_PIC_Configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
+    const PICDriver* drivers[] = { i8259_GetDriver() };
+
+    for (int i = 0; i < SIZE(drivers); i++)
+    {
+        if (drivers[i]->Probe())
+            g_Driver = drivers[i];
+    }
+
+    if (g_Driver == NULL)
+    {
+        printf("No PIC found!\n");
+        return;
+    }
+
+    printf("Found %s PIC.\n", g_Driver->Name);
+    g_Driver->Initialize(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8, false);
+
     for (int i = 0; i < 16; i++)
         i686_ISR_RegisterHandler(PIC_REMAP_OFFSET + i, i686_IRQ_Handler);
     i686_EnableInterrupts();
+
+    g_Driver->Unmask(0); // Timer
+    g_Driver->Unmask(1); // Keyboard
 }
 
 void i686_IRQ_RegisterHandler(int irq, IRQHandler handler)
