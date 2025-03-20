@@ -24,8 +24,6 @@ The tholOS (Tholos: from Ancient Greek, meaning "conical roof" or "dome") operat
     * Reads disk using BIOS interrupts (`INT 13h`)
     * Initial support for FAT12 filesystem
 
-Note: Not all of these features may be complete at present time, but all above mentioned features are planned.
-
 # Complilation
 Compiling the OS requires a good chunk of prerequisite packages.  
 I developed this in Linux, within the WSL2 environment (in whatever distro WSL comes with, probably some flavor of Ubuntu).  

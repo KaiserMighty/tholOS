@@ -45,8 +45,8 @@ void i686_IRQ_Initialize()
         i686_ISR_RegisterHandler(PIC_REMAP_OFFSET + i, i686_IRQ_Handler);
     i686_EnableInterrupts();
 
-    g_Driver->Unmask(0); // Timer
-    g_Driver->Unmask(1); // Keyboard
+    // g_Driver->Unmask(0); // Timer
+    // g_Driver->Unmask(1); // Keyboard
 }
 
 void i686_IRQ_RegisterHandler(int irq, IRQHandler handler)
