@@ -4,6 +4,7 @@ section .entry
 
 extern __bss_start
 extern __end
+extern _init
 
 extern start
 global entry
@@ -47,6 +48,9 @@ entry:
     mov al, 0
     cld
     rep stosb
+
+    ; call global constructors
+    call _init
 
     ; send boot drive to cstart
     xor edx, edx

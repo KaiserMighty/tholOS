@@ -32,22 +32,24 @@ There are shell scripts included to make running "easy".
 Bochs is used to debug the OS, but the ROMs needed are not included within this repo.
 
 ## Prerequisites
+Create a folder called `toolchain` in the project directory, the location of this directory should be changed in `build_scripts/config.py` because it is an absolute path.  
+You may need to change the binutils and GCC version within `scripts/setup_toolchain.py`.  
+You may also need to add execute permissions to the shell scripts in `scripts`, you can do this with `chmod +x SCRIPT.sh` for each file within the `scripts` directory.  
 ```
 sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo nasm mtools qemu-system-x86
 
-make toolchain
+scons toolchain
 ```
-You may need to change the binutils and GCC version within `build_scripts/toolchain.mk`.  
-
+If there is an error message that says the MPC packages cannot be found, try uncommenting lines 63 and 64 in `setup_toolchain.sh` and run scons `toolchain again`.  
+You can clear out the toolchain directory by running `scons toolchain -c`.  
 ## Build
+If you are not using WSL2, change `mountMethod` from `mount` to `guestfs` in `build_scripts/config.py`, this will make it so it doesn't prompt you for the sudo password when you compile.    
 ```
-make
-chmod +x run.sh
-./run.sh
+scons
+scons run
 ```
 
 ## Debug
 ```
-chmod +x debug.sh
-./run.debug
+scons debug
 ```
