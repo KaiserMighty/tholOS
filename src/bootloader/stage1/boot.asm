@@ -2,32 +2,49 @@ bits 16
 
 %define ENDL 0x0D, 0x0A
 
+%define fat12 1
+%define fat16 2
+%define fat32 3
+%define ext2  4
+
 
 section .fsjump
     jmp short start
     nop
 
 section .fsheaders
-    bdb_oem:                    db "abcdefgh"           ; 8 bytes
-    bdb_bytes_per_sector:       dw 512
-    bdb_sectors_per_cluster:    db 1
-    bdb_reserved_sectors:       dw 1
-    bdb_fat_count:              db 2
-    bdb_dir_entries_count:      dw 0E0h
-    bdb_total_sectors:          dw 2880                 ; 2880 * 512 = 1.44MB
-    bdb_media_descriptor_type:  db 0F0h                 ; F0 = 3.5" floppy disk
-    bdb_sectors_per_fat:        dw 9                    ; 9 sectors/fat
-    bdb_sectors_per_track:      dw 18
-    bdb_heads:                  dw 2
-    bdb_hidden_sectors:         dd 0
-    bdb_large_sector_count:     dd 0
+%if (FILESYSTEM == fat12) || (FILESYSTEM == fat16) || (FILESYSTEM == fat32)
+    bdb_oem:                        db "abcdefgh"           ; 8 bytes
+    bdb_bytes_per_sector:           dw 512
+    bdb_sectors_per_cluster:        db 1
+    bdb_reserved_sectors:           dw 1
+    bdb_fat_count:                  db 2
+    bdb_dir_entries_count:          dw 0E0h
+    bdb_total_sectors:              dw 2880                 ; 2880 * 512 = 1.44MB
+    bdb_media_descriptor_type:      db 0F0h                 ; F0 = 3.5" floppy disk
+    bdb_sectors_per_fat:            dw 9                    ; 9 sectors/fat
+    bdb_sectors_per_track:          dw 18
+    bdb_heads:                      dw 2
+    bdb_hidden_sectors:             dd 0
+    bdb_large_sector_count:         dd 0
 
-    ebr_drive_number:           db 0                    ; 0x00 floppy, 0x80 hdd
-                                db 0                    ; reserved
-    ebr_signature:              db 29h
-    ebr_volume_id:              db 42h, 11h, 37h, 05h   ; serial number
-    ebr_volume_label:           db 'THOLOS     '        ; 11 bytes
-    ebr_system_id:              db 'FAT12   '           ; 8 bytes
+    %if (FILESYSTEM == fat32)
+        fat32_sectors_per_fat:      dd 0
+        fat32_flags:                dw 0
+        fat32_fat_version_number:   dw 0
+        fat32_rootdir_cluster:      dd 0
+        fat32_fsinfo_sector:        dw 0
+        fat32_backup_boot_sector:   dw 0
+        fat32_reserved:             times 12 db 0
+    %endif
+
+    ebr_drive_number:               db 0                    ; 0x00 floppy, 0x80 hdd
+                                    db 0                    ; reserved
+    ebr_signature:                  db 29h
+    ebr_volume_id:                  db 42h, 11h, 37h, 05h   ; serial number
+    ebr_volume_label:               db 'THOLOS     '        ; 11 bytes
+    ebr_system_id:                  db 'FAT12   '           ; 8 bytes
+%endif
 
 ; Program
 section .entry
@@ -59,10 +76,6 @@ section .entry
         ; read disk
         ; DL should be set to drive number
         mov [ebr_drive_number], dl
-
-        ; show loading message
-        mov si, msg_loading
-        call puts
 
         ; check extensions present
         mov ah, 0x41
@@ -288,9 +301,8 @@ section .text
         ret
 
 section .rodata
-    msg_loading:            db 'Loading...', ENDL, 0
-    msg_read_failed:        db 'Disk read failed!', ENDL, 0
-    msg_stage2_not_found:   db 'STAGE2.BIN file not found!', ENDL, 0
+    msg_read_failed:        db 'Read failed!', ENDL, 0
+    msg_stage2_not_found:   db 'STAGE2.BIN not found!', ENDL, 0
     file_stage2_bin:        db 'STAGE2  BIN'
 
 section .data

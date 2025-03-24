@@ -32,8 +32,6 @@ void __attribute__((section(".entry"))) start(uint16_t bootDrive)
     log_crit("Main", "Debug Critical Message Test!");
 
     printf("Hello world!\n");
-    debugf("Debug Port E5!\n");
-    debugf("\033[34mDebug Colors Port E5!\033[0m\n");
 
     // divide_by_zero();
     // overflow();

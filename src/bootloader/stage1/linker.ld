@@ -6,7 +6,7 @@ SECTIONS
 {
     . = phys;
 
-    .fsjump             : { *(.fsjump)           }
+    .fsjump             : { *(.fsjump)          }
     .fsheaders          : { *(.fsheaders)       }
     .entry              : { __entry_start = .;
                             *(.entry)   

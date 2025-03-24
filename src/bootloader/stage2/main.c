@@ -14,7 +14,6 @@ typedef void (*KernelStart)();
 void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
 {
     clrscr();
-    printf("partition=%x\r\n", partition);
     DISK disk;
     if (!DISK_Initialize(&disk, bootDrive))
     {
@@ -29,7 +28,7 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
         goto end;
     }
 
-    FAT_File* fd = FAT_Open(&part, "/kernel.bin");
+    FAT_File* fd = FAT_Open(&part, "/boot/kernel.bin");
     uint32_t read;
     uint8_t* kernelBuffer = Kernel;
     while ((read = FAT_Read(&part, fd, MEMORY_LOAD_SIZE, KernelLoadBuffer)))
