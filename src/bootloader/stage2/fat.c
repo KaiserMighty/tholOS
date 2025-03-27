@@ -6,6 +6,7 @@
 #include "ctype.h"
 #include <stddef.h>
 #include "minmax.h"
+#include "stdlib.h"
 
 #define SECTOR_SIZE             512
 #define MAX_PATH_SIZE           256
@@ -71,6 +72,12 @@ typedef struct
 
 typedef struct
 {
+    uint8_t Order;
+    int16_t Chars[13];
+} FAT_LFNBlock;
+
+typedef struct
+{
     union
     {
         FAT_BootSector BootSector;
@@ -80,6 +87,8 @@ typedef struct
     FAT_FileData OpenedFiles[MAX_FILE_HANDLES];
     uint8_t FatCache[FAT_CACHE_SIZE * SECTOR_SIZE];
     uint32_t FatCachePosition;
+    FAT_LFNBlock LFNBlocks[FAT_LFN_LAST];
+    int LFNCount;
 } FAT_Data;
 
 static FAT_Data* g_Data;
@@ -89,6 +98,13 @@ static uint32_t g_TotalSectors;
 static uint32_t g_SectorsPerFat;
 
 uint32_t FAT_ClusterToLba(uint32_t cluster);
+
+int FAT_CompareLFNBlocks(const void* blockA, const void* blockB)
+{
+    FAT_LFNBlock* a = (FAT_LFNBlock*)blockA;
+    FAT_LFNBlock* b = (FAT_LFNBlock*)blockB;
+    return ((int)a->Order) - ((int)b->Order);
+}
 
 bool FAT_ReadBootSector(Partition* disk)
 {
@@ -169,6 +185,7 @@ bool FAT_Initialize(Partition* disk)
 
     for (int i = 0; i < MAX_FILE_HANDLES; i++)
         g_Data->OpenedFiles[i].Opened = false;
+    g_Data->LFNCount = 0;
 
     return true;
 }
@@ -325,29 +342,67 @@ void FAT_Close(FAT_File* file)
     }
 }
 
-bool FAT_FindFile(Partition* disk, FAT_File* file, const char* name, FAT_DirectoryEntry* entryOut)
+void FAT_GetShortName(const char* name, char shortName[12])
 {
-    char fatName[12];
-    FAT_DirectoryEntry entry;
-    memset(fatName, ' ', sizeof(fatName));
+    memset(shortName, ' ', 12);
+    shortName[11] = '\0';
 
-    // this finds the first period, extention is the last period, fix later
     const char* ext = strchr(name, '.');
     if (ext == NULL)
         ext = name + 11;
 
     for (int i = 0; i < 8 && name[i] && name + i < ext; i++)
-        fatName[i] = toUpper(name[i]);
+        shortName[i] = toUpper(name[i]);
 
     if (ext != name + 11)
     {
         for (int i = 0; i < 3 && ext[i + 1]; i++)
-            fatName[i + 8] = toUpper(ext[i + 1]);
+            shortName[i + 8] = toUpper(ext[i + 1]);
     }
+}
+
+bool FAT_FindFile(Partition* disk, FAT_File* file, const char* name, FAT_DirectoryEntry* entryOut)
+{
+    char shortName[12];
+    //char longName[256];
+    FAT_DirectoryEntry entry;
+    FAT_GetShortName(name, shortName);
 
     while (FAT_ReadEntry(disk, file, &entry))
     {
-        if (memcmp(fatName, entry.Name, 11) == 0)
+        /*
+        if (entry.Attributes == FAT_ATTRIBUTE_LFN) {
+            FAT_LongFileEntry* lfn = (FAT_LongFileEntry*)&entry;
+
+            int idx = g_Data->LFNCount++;
+            g_Data->LFNBlocks[idx].Order = lfn->Order & (FAT_LFN_LAST - 1);
+            memcpy(g_Data->LFNBlocks[idx].Chars, lfn->Chars1, sizeof(lfn->Chars1));
+            memcpy(g_Data->LFNBlocks[idx].Chars + 5, lfn->Chars2, sizeof(lfn->Chars2));
+            memcpy(g_Data->LFNBlocks[idx].Chars + 11, lfn->Chars1, sizeof(lfn->Chars3));
+
+            // is this the last LFN block
+            if ((lfn->Order & FAT_LFN_LAST) != 0) {
+                qsort(g_Data->LFNBlocks, g_Data->LFNCount, sizeof(FAT_LFNBlock), FAT_CompareLFNBlocks);
+                char* namePos = longName;
+                for (int i = 0; i < g_Data->LFNCount; i++)
+                {
+                    int16_t* chars = g_Data->LFNBlocks[i].Chars;
+                    int16_t* charsLimit = chars + 13;
+
+                    while (chars < charsLimit && *chars != 0)
+                    {
+                        int codepoint;
+                        chars = utf16_to_codepoint(chars, &codepoint);
+                        namePos = codepoint_to_utf8(codepoint, namePos);
+                    }
+                }
+                *namePos = 0;
+                printf("LFN: %s\n", longName);
+            }
+        }
+        */
+
+        if (memcmp(shortName, entry.Name, 11) == 0)
         {
             *entryOut = entry;
             return true;
