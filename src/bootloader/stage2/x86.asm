@@ -213,3 +213,64 @@ x86_Disk_Read:
     mov esp, ebp
     pop ebp
     ret
+
+E820Signature                   equ 0x534D4150
+
+global x86_E820GetNextBlock
+x86_E820GetNextBlock:
+    ; make new call frame
+    push ebp                    ; save old call frame
+    mov ebp, esp                ; initialize new call frame
+
+    x86_EnterRealMode
+
+    ; save modified regs
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ds
+    push es
+
+    ; setup params
+    LinearToSegOffset [bp + 8], es, edi, di
+    LinearToSegOffset [bp + 12], ds, esi, si
+    mov ebx, [ds:si]
+
+    mov eax, 0xE820             ; function
+    mov edx, E820Signature      ; signature
+    mov ecx, 24                 ; size of structure
+
+    int 0x15
+
+    cmp eax, E820Signature
+    jne .Error
+
+    .IfSuccedeed:
+        mov eax, ecx            ; return size
+        mov [ds:si], ebx        ; fill continuation parameter
+        jmp .EndIf
+
+    .Error:
+        mov eax, -1
+
+    .EndIf:
+
+    ; restore regs
+    pop es
+    pop ds
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+
+    push eax
+    x86_EnterProtectedMode
+    pop eax
+
+    ; restore old call frame
+    mov esp, ebp
+    pop ebp
+    ret
